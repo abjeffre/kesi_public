@@ -10,6 +10,6 @@ function ResourceDynamics(harvest, stock, max_stock, regrow, volatility, ngroups
 
       #Check to make sure stock follows logical constraints
       stock .= ifelse.(stock .> max_stock, max_stock, stock)
-      stock .= ifelse.(stock.<= 0, 1, stock) #note that if the forest is depleted it will regrow back to the regrowth rate* max.
+      stock .= ifelse.(stock.<= 0, .01 .* max_stock, stock) #note that if the forest is depleted it will regrow back to the regrowth rate* max.
       return stock 
 end

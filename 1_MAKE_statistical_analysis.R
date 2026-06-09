@@ -66,90 +66,24 @@ extract.samples2 <- function(x){
 ########## LOAD DATA #############
 
 
-data <- readRDS("data/data.RDS")
+data <- readRDS("~/kesi/data/data_kesi2025-09-22.RDS")
 
+##########################
+######### FULL MODEL #####
 
-##################################
-########## RUN MODELS ############
+full_24_model <- cmdstan_model("kesi/code/stan_models/main_model.stan")
 
-# Set up pathfinder for efficent sampling
-
-m1 <- cmdstan_model("code/stan_models/model_sectors.stan")
-pf<-m1$pathfinder(data = data, init = 0, num_paths = 4)
-
-# Extract Initalization values
-init_list<-get_init_list(pf)
-# Fit the main model 
-fit_sectors <- m1$sample(
+full_hmc <- full_24_model$sample(
   data = data,
-  iter_sampling = 250,
-  iter_warmup = 250,
-  chains = 8,
-  init = list(init_list, init_list, init_list, init_list, init_list, init_list, init_list, init_list),  # one list for each chain
-  parallel_chains = 8,
-  refresh = 10
+  iter_sampling = 500,
+  iter_warmup = 500,
+  chains = 4,
+  init = 0,
+  parallel_chains = 4,
+  refresh = 2
 )
-# Save
-saveRDS(fit_sectors, "data/fit_sectors.RDS")
-
-
-m2 <- cmdstan_model("code/stan_models/model_aggregate.stan")
-pf<-m2$pathfinder(data = data, init = 0, num_paths = 4)
-
-# Extract Initalization values
-init_list2<-get_init_list(pf)
-# Fit the main model 
-fit_aggregate <- m2$sample(
-  data = data,
-  iter_sampling = 250,
-  iter_warmup = 250,
-  chains = 8,
-  init = list(init_list2, init_list2, init_list2, init_list2, init_list2, init_list2, init_list2, init_list2),  # one list for each chain
-  parallel_chains = 8,
-  refresh = 10
-)
-# Save
-saveRDS(fit_aggregate, "data/fit_aggregate.RDS")
-
-
-
-###################################
-####### MAKE PLOTS ################
-# fit_sectors <-readRDS("data/fit_sectors.RDS")
-
-post <- extract.samples2(fit_sectors)
-post2 <- extract.samples2(fit_aggregate)
-
-make_layout <- function(){
-  
-  layout_matrix <- rbind(
-    c(1, 1, 2, 2),    # First row: two plots, each taking half the width
-    c(3, 4, 5, 6),    # Second row: four plots
-    c(7, 8, 9, 10),   # Third row: four plots
-    c(11, 12, 13, 14) # Fourth row: four plots
-  )
-  
-  # Adjust the heights of the rows
-  layout_heights <- c(2, 1, 1, 1)  # First row shorter, next rows taller
-  
-  # Set up the layout
-  layout(mat = layout_matrix, heights = layout_heights)
-  par(oma = c(2,2,0, 0))
-}
-
-font_size = 1.8
-lwidth = 3.5
-sectors<- c("housing", "retail",  "fishing", "manufacturing", "agriculture",   "cloves",  "ntfp",    "government",    "livestock",     "agroforestry",  "seaweed", "services"  )
-
-pdf("figures/main.pdf", width = 11, height = 14)
-make_layout()
-par(oma = c(2,2,0, 0))
-par(mar=c(5.2,4.2,3,1))
-source("code/plotting/base_plot.R")
-par(mar=c(3,3,2,1))
-source("code/plotting/earnings_on_kesi.R")
-dev.off()
-
+post <- extract.samples(full_hmc)
+saveRDS(post, "data/full_hmc.RDS")
 
 
 

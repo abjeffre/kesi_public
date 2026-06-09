@@ -2,6 +2,7 @@
   #Note that this harvest function does not pool labor before applying the elastisicty
   function GetAgHarvest(effort, gid, K, kmax, tech, labor, ag_degrade, necessity, ngroups)
     b = zeros(ngroups)
+    effort = effort.*100
     for i in 1:ngroups
       b[i]=cdf.(Beta(ag_degrade[1], ag_degrade[2]), K[i]/maximum(kmax))
     end
@@ -13,6 +14,7 @@
   #Note that this harvest function does not pool labor before applying the elastisicty
   function GetHarvestStone(effort, gid, K, kmax, tech, labor, ag_degrade, necessity, ngroups)
     b = zeros(ngroups)
+    effort = effort.* 100
     for i in 1:ngroups
       b[i]=cdf.(Beta(ag_degrade[1], ag_degrade[2]), K[i]/maximum(kmax))
     end
@@ -26,6 +28,7 @@
    # AT LEAST IN THE SENSE THAT THE MARGINAL EFFECTS OF LABOR IS CALCULATED AT THE GROUP LEVEL
    # THIS IN A SENSE MAKES LAND SCARCE!
   function GetAgHarvest2(effort, gid, K, kmax, tech, labor, ag_degrade, necessity, ngroups)
+    effort = effort*100
     b = zeros(ngroups)
     X =zeros(ngroups)
     for i in 1:ngroups
