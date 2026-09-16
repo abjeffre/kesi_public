@@ -24,7 +24,7 @@ end
 )
 
     # FIXED parameters for Sim
-    years = KESI_SMOKE ? SMOKE_YEARS : 2000
+    years = KESI_TEST ? TEST_YEARS : 2000
     nperiods = 26
     M = 2 # Types of weather variables
     weather_noise = .01
@@ -97,8 +97,8 @@ end
 end
 
 
-inspect = smoke_grid(collect(.01 : .1 : 1))
-price = smoke_grid(collect(1.1:.12:2.2))
+inspect = test_grid(collect(.01 : .1 : 1))
+price = test_grid(collect(1.1:.12:2.2))
 
 S=expand_grid(price, inspect)
 CSV.write(clean_path("data/sweeps/earnings_on_kesi/sweep_list.csv"), DataFrame(S, :auto))

@@ -2,7 +2,7 @@
 ######### FIGURE: WEATHER ON EARNINGS PREDICTION ERROR
 # Reads data/sweeps/weather_on_earnings/stan (from 6_MAKE); writes figures/prediction_error.pdf
 # sweep_list column 1 is gamma, column 2 is noise (see weather_on_earnings_sweep.jl).
-# Cells without a finished fit (e.g. a smoke run) are skipped.
+# Cells without a finished fit (e.g. a test run) are skipped.
 
 sweep_list <- as.data.frame(read_csv("data/sweeps/weather_on_earnings/sweep_list.csv"))
 cell_file <- function(prefix, row) paste0("data/sweeps/weather_on_earnings/stan/", prefix, "noise_", sweep_list[row, 2], "_gamma_", sweep_list[row, 1], ".csv")

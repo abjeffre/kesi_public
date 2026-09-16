@@ -2,20 +2,23 @@
 ############ SHARED HELPERS FOR THE KESI REPLICATION ##############
 # Sourced by every MAKE script after its library() calls.
 
-# Smoke mode: KESI_SMOKE=1 runs every model with a handful of iterations so the
+# Test mode: KESI_TEST=1 runs every model with a handful of iterations so the
 # whole pipeline can be exercised in minutes. Unset it for the paper's settings.
-KESI_SMOKE <- nzchar(Sys.getenv("KESI_SMOKE"))
+KESI_TEST <- nzchar(Sys.getenv("KESI_TEST"))
 ITER_FULL <- 500
-ITER_SMOKE <- 20
-SAMPLER_ITER <- if (KESI_SMOKE) ITER_SMOKE else ITER_FULL
+ITER_TEST <- 20
+SAMPLER_ITER <- if (KESI_TEST) ITER_TEST else ITER_FULL
 # One gradient of the main model costs about 0.5 s, so unadapted warmup at the
-# default tree depth of 10 runs for hours. Smoke mode caps the tree depth.
+# default tree depth of 10 runs for hours. Test mode caps the tree depth.
 MAX_TREEDEPTH_FULL <- 10
-MAX_TREEDEPTH_SMOKE <- 5
-SAMPLER_MAX_TREEDEPTH <- if (KESI_SMOKE) MAX_TREEDEPTH_SMOKE else MAX_TREEDEPTH_FULL
+MAX_TREEDEPTH_TEST <- 5
+SAMPLER_MAX_TREEDEPTH <- if (KESI_TEST) MAX_TREEDEPTH_TEST else MAX_TREEDEPTH_FULL
 SAMPLER_CHAINS <- 4
 SAMPLER_REFRESH <- 100
-SMOKE_SWEEP_CELLS <- 4
+TEST_SWEEP_CELLS <- 4
+
+# figures/ is not in git; every R step writes a PDF there.
+dir.create("figures", showWarnings = FALSE)
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
@@ -117,7 +120,7 @@ makeGPDmat <- function(means) {
 ############ PARALLEL SWEEP RUNNER ################################
 
 # Runs one_cell(row_index) over the sweep rows on a PSOCK cluster, which works
-# on Windows as well as Unix. KESI_CORES caps the workers; KESI_SMOKE keeps the
+# on Windows as well as Unix. KESI_CORES caps the workers; KESI_TEST keeps the
 # first few cells only. A cell whose fit fails is reported and skipped, so the
 # heatmaps are drawn from the cells that finished.
 # Compiles each Stan file once on the master before workers start; parallel
@@ -134,7 +137,7 @@ report_failed_cells <- function(results) {
 
 run_sweep_cells <- function(sweep_list, one_cell) {
   rows <- seq_len(nrow(sweep_list))
-  if (KESI_SMOKE) rows <- head(rows, SMOKE_SWEEP_CELLS)
+  if (KESI_TEST) rows <- head(rows, TEST_SWEEP_CELLS)
   guarded_cell <- function(row) {
     tryCatch(one_cell(row), error = function(e) {
       structure(list(row = row, message = paste0("Sweep cell ", row, " failed: ", conditionMessage(e))),

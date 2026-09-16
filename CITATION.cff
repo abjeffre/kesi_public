@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the paper below."
+title: "kesi_public: replication code and data for 'Seasonal Economic Fluctuations Drive Illegal Resource Extractions'"
+type: software
+repository-code: "https://github.com/abjeffre/kesi_public"
+license:
+  - MIT
+  - CC-BY-NC-ND-4.0
+authors:
+  - family-names: Andrews
+    given-names: Jeffrey
+    email: jeffrey_andrews@eva.mpg.de
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Ready
+    given-names: Elspeth
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Khamis
+    given-names: Bakari Makame
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Ali
+    given-names: Abuu Mbarouk
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Ali
+    given-names: Ali Abdulla
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Makame
+    given-names: Machano Ali
+    affiliation: "Max Planck Institute for Evolutionary Anthropology"
+  - family-names: Rashid
+    given-names: Rashid Sulieman
+    affiliation: "Zanzibar Department of Forestry"
+  - family-names: Clark
+    given-names: Matthew
+    affiliation: "Imperial College London"
+preferred-citation:
+  type: article
+  title: "Seasonal Economic Fluctuations Drive Illegal Resource Extractions"
+  journal: "Cell Reports Sustainability"
+  year: 2026
+  doi: 10.1016/j.crsus.2026.100830
+  authors:
+    - family-names: Andrews
+      given-names: Jeffrey
+    - family-names: Ready
+      given-names: Elspeth
+    - family-names: Khamis
+      given-names: Bakari Makame
+    - family-names: Ali
+      given-names: Abuu Mbarouk
+    - family-names: Ali
+      given-names: Ali Abdulla
+    - family-names: Makame
+      given-names: Machano Ali
+    - family-names: Rashid
+      given-names: Rashid Sulieman
+    - family-names: Clark
+      given-names: Matthew

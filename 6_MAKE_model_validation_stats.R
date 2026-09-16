@@ -3,7 +3,7 @@
 # Reads  data/sweeps/*/abm/*.csv and sweep_list.csv (from 5_MAKE)
 # Writes data/sweeps/*/stan/*.csv, figures/prediction_error.pdf,
 #        figures/combined_plot.pdf
-# KESI_CORES caps the parallel workers; KESI_SMOKE fits the first few cells only.
+# KESI_CORES caps the parallel workers; KESI_TEST fits the first few cells only.
 
 library(readr)
 library(rethinking)

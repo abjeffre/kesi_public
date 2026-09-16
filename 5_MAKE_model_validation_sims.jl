@@ -3,7 +3,7 @@
 # Writes data/sweeps/{earnings_on_kesi,weather_on_earnings}/abm/*.csv and
 #        the two sweep_list.csv files read by 6_MAKE.
 # KESI_WORKERS sets the number of worker processes (default 20; the full
-# sweep takes about a day on 20 cores). KESI_SMOKE=1 runs a 2x2 grid of short
+# sweep takes about a day on 20 cores). KESI_TEST=1 runs a 2x2 grid of short
 # simulations to check the pipeline.
 # Run from the repository root: julia --project=. 5_MAKE_model_validation_sims.jl
 
@@ -15,9 +15,9 @@ using Distributed
 const DEFAULT_WORKERS = 20
 addprocs(parse(Int, get(ENV, "KESI_WORKERS", string(DEFAULT_WORKERS))); exeflags = "--project=$(@__DIR__)")
 
-@everywhere const KESI_SMOKE = haskey(ENV, "KESI_SMOKE")
-@everywhere const SMOKE_YEARS = 50
-@everywhere smoke_grid(values) = KESI_SMOKE ? values[[1, end]] : values
+@everywhere const KESI_TEST = haskey(ENV, "KESI_TEST")
+@everywhere const TEST_YEARS = 50
+@everywhere test_grid(values) = KESI_TEST ? values[[1, end]] : values
 
 @everywhere using DataFrames
 @everywhere using Statistics

@@ -24,7 +24,7 @@ end
 )
 
     # FIXED parameters for Sim
-    years = KESI_SMOKE ? SMOKE_YEARS : 2000
+    years = KESI_TEST ? TEST_YEARS : 2000
     nperiods = 26
     M = 2 # Types of weather variables
     weather_noise = 1
@@ -137,8 +137,8 @@ end
 end
 
 
-γ₁_sweep = smoke_grid(collect(.01:.02:.2))
-wage_var_sweep  = smoke_grid(collect(.01:.02:.2))
+γ₁_sweep = test_grid(collect(.01:.02:.2))
+wage_var_sweep  = test_grid(collect(.01:.02:.2))
 S=expand_grid(γ₁_sweep, wage_var_sweep)
 CSV.write(clean_path("data/sweeps/weather_on_earnings/sweep_list.csv"), DataFrame(S, :auto))
 # addprocs(10)

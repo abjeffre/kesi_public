@@ -8,4 +8,5 @@ data/full_hmc*.RDS
 data/post_hist.RDS
 data/robustness_*.RDS
 data/sweeps/**/*.csv
-smoke_*.log
+test_*.log
+full_run.log

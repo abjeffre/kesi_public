@@ -1,7 +1,7 @@
 #########################################
 ######### FIGURE: EARNINGS ON KESI SWEEP HEATMAPS
 # Reads data/sweeps/earnings_on_kesi/stan (from 6_MAKE); writes figures/combined_plot.pdf
-# Cells without a finished fit (e.g. a smoke run) are skipped.
+# Cells without a finished fit (e.g. a test run) are skipped.
 
 sweep_list <- as.data.frame(read_csv("data/sweeps/earnings_on_kesi/sweep_list.csv"))
 cell_file <- function(prefix, row) paste0("data/sweeps/earnings_on_kesi/stan/", prefix, "price_", sweep_list[row, 1], "_inspect_", sweep_list[row, 2], ".csv")
