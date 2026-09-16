@@ -74,7 +74,6 @@ data{
   matrix[L, L] DmatX;  // Year distance matrix
   array[N_env] int year;  // Time period ID 1:N_est
   array[N_cases] int kesi;  // Number of observed kesi in the time period
-  real target_var;  // Target variance
 }
      
 parameters{

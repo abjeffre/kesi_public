@@ -1,25 +1,20 @@
-#########################################
-######### Bio ECON  #####################
+###################################################################
+############ 6. MODEL VALIDATION - RECOVERY FITS ##################
+# Reads  data/sweeps/*/abm/*.csv and sweep_list.csv (from 5_MAKE)
+# Writes data/sweeps/*/stan/*.csv, figures/prediction_error.pdf,
+#        figures/combined_plot.pdf
+# KESI_CORES caps the parallel workers; KESI_SMOKE fits the first few cells only.
+
 library(readr)
-library(abind)
 library(rethinking)
 library(posterior)
+library(cmdstanr)
 library(ggplot2)
 library(cowplot)
+source("code/functions/utility.R")
 
-set_project_wd <- function(folder){
-  user=Sys.info()[[6]]
-  if(user=="jeffrey_andrews") setwd(paste0("C:/Users/jeffrey_andrews/OneDrive/Documents/", folder))
-  else if(user=="Jeff") setwd(paste0("C:/Users/Jeff/OneDrive/Documents/", folder))
-  else if(user == 'jeffr')  setwd(paste0("C:/Users/jeffr/OneDrive/Documents/", folder))
-  else if(user == 'unknown')  setwd(paste0("~/", folder))
-}
-set_project_wd("Bio_econ")
-source("/functions/utility.R")
+source("code/sweeps/weather_on_earnings_recover.R")
+source("code/sweeps/earnings_on_kesi_recover.R")
 
-
-################################################################
-########## RUN STAN MODELS FOR CLIMATE ON EARNINGS #############
-
-source("/code/sweeps/weather_on_earnings_recover.R")
-source("/code/sweeps/earnings_on_kesi_recover.R")
+source("code/plotting/weather_on_earnings_sweep_heatmap.R")
+source("code/plotting/earnings_on_kesi_sweep_heatmap.R")

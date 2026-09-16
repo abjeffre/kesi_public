@@ -1,44 +1,30 @@
-####################
-#LOAD PACKAGES #####
+###################################################################
+############ 4. THEORY PLOT (SEASONAL WAGES SIMULATION) ###########
+# Writes figures/simulation_predictions.pdf
+# Run from the repository root: julia --project=. 4_MAKE_theory_plots.jl
 
-######################################
-############ DETERMINE COMPUTER ######
-using Distributed
-@everywhere using DataFrames
-@everywhere using Statistics
-@everywhere using Distributions
-@everywhere using Random
-@everywhere using Distributions
-@everywhere using StatsBase
-@everywhere using Plots
-@everywhere using Plots.PlotMeasures
-@everywhere using JLD2
-@everywhere using Serialization
-@everywhere using Statistics
-@everywhere using ColorSchemes
-@everywhere using GLM
-@everywhere using CSV
+using Pkg
+Pkg.activate(@__DIR__)
+Pkg.instantiate()
 
+using DataFrames
+using Statistics
+using Distributions
+using Random
+using StatsBase
+using Plots
+using Plots.PlotMeasures
+using CSV
 
+include(joinpath(@__DIR__, "code", "functions", "utility.jl"))
 
-#####################################
-######## Initalize Functions ########
+# The theory ABM (abm_cleaned.jl) has its own submodule set; code/abm/submodules belongs to the sweep ABM (test_seasons.jl).
+submodule_dir = joinpath(@__DIR__, "code", "abm", "theory_submodules")
+for file in readdir(submodule_dir)
+    include(joinpath(submodule_dir, file))
+end
 
-@everywhere include(string(pwd(), "\\functions\\utility.jl"))
+include(joinpath(@__DIR__, "code", "abm", "abm_cleaned.jl"))
 
-######################################
-#### Initalize submodules ############
-
-@everywhere files = readdir(string(pwd(), ("\\code\\abm\\submodules")))
-@everywhere for i in files  include(string(pwd(), "\\code\\abm\\submodules\\$i")) end
-
-######################################
-######### CHOOSE ABM VERSION #########
-
-@everywhere include(string(pwd(), "\\code\\abm\\abm_cleaned.jl"))
-
-#########################################
-###########  SEASONALITY PLOT ###########
-
-@everywhere include(string(pwd(),  "\\code\\plotting\\base_seasonality_theory_plot.jl"))
-
+mkpath(joinpath(@__DIR__, "figures"))
+include(joinpath(@__DIR__, "code", "plotting", "base_seasonality_theory_plot.jl"))

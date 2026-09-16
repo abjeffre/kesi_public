@@ -1,3 +1,16 @@
+###################################################################
+############ 2. FIGURES FROM THE MAIN MODEL ######################
+# Reads  data/full_hmc.RDS (from 1_MAKE), data/data_kesi2025-09-22.RDS
+# Writes figures/base_relationships.pdf, figures/predicted.pdf
+
+library(rethinking)
+library(abind)
+library(matrixStats)
+source("code/functions/utility.R")
+
+data <- readRDS("data/data_kesi2025-09-22.RDS")
+post <- readRDS("data/full_hmc.RDS")
+
 ####################################################################
 ################## MAKE THE BASE PLOT ##############################
 
@@ -150,8 +163,6 @@ dotchart2<-function (x, labels = NULL, groups = NULL, gdata = NULL, offset = 1/8
   invisible()
 }
 
-##### LOAD DATA ############
-post <- readRDS('data/full_hmc.RDS')
 # --- helper: pick param name ---
 mu_draw <- if ("bgdp_mu" %in% names(post)) post$bgdp_mu else post$mu_gdp
 a_draw  <- post$a
@@ -159,7 +170,6 @@ a_draw  <- post$a
 # --- build a FIXED (non-random) GDP baseline from posterior means ---
 N_env <- data$N_env; K <- data$K
 est_ind <- data$est_ind; eco_ind <- data$eco_ind
-`%||%` <- function(a,b) if (!is.null(a)) a else b
 clove_hist <- data$clove_hist %||% NULL
 
 gdp_impute_bar <- apply(post$gdp_impute, c(2,3), mean)  # [N_est,K]
@@ -246,7 +256,6 @@ text(x = 120, y = 2.40,  col  = "#6C0006", # Coordinates
 # )
 # 
 
-library(shape)
 shape::Arrows(
   132, colMeans(ests)[1] - 0.3,   # start (x0, y0) — above
   132, colMeans(ests)[100]  + 0.3,    # end   (x1, y1) — below
@@ -510,8 +519,6 @@ dev.off()
 ## 3-PANEL OND FIGURE (robust full script)
 ## =========================
 
-post <- readRDS("data/full_hmc.RDS")
-data <- readRDS("data/data_kesi2025-09-22.RDS")
 
 ## -------- palette ----------
 col_teal   <- "#1B9088"

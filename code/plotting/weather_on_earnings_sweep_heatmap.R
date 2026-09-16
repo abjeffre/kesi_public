@@ -1,6 +1,14 @@
+#########################################
+######### FIGURE: WEATHER ON EARNINGS PREDICTION ERROR
+# Reads data/sweeps/weather_on_earnings/stan (from 6_MAKE); writes figures/prediction_error.pdf
+# sweep_list column 1 is gamma, column 2 is noise (see weather_on_earnings_sweep.jl).
+# Cells without a finished fit (e.g. a smoke run) are skipped.
 
-files<-dir("data/sweeps/weather_on_earnings/stan")
 sweep_list <- as.data.frame(read_csv("data/sweeps/weather_on_earnings/sweep_list.csv"))
+cell_file <- function(prefix, row) paste0("data/sweeps/weather_on_earnings/stan/", prefix, "noise_", sweep_list[row, 2], "_gamma_", sweep_list[row, 1], ".csv")
+fitted <- file.exists(cell_file("y_counterfactual_1_observed_years_10_", seq_len(nrow(sweep_list)))) & file.exists(cell_file("y_estimated_1_observed_years_10_", seq_len(nrow(sweep_list))))
+sweep_list <- sweep_list[fitted, , drop = FALSE]
+if (nrow(sweep_list) == 0) stop("no fitted sweep cells found; run the recovery step first")
 
 addline_format <- function(x,...){
   gsub('\\s','\n',x)
@@ -9,10 +17,9 @@ addline_format <- function(x,...){
 
 M <- rep(0, nrow(sweep_list))
 
-for(i in 1:nrow(sweep_list)){
-  print(i)
+for(i in seq_len(nrow(sweep_list))){
   # First we get whether or not there has been illegal activity
-  base_name <- paste0("noise_",sweep_list[i,1], "_gamma_",sweep_list[i,2],".csv")
+  base_name <- paste0("noise_", sweep_list[i, 2], "_gamma_", sweep_list[i, 1], ".csv")
   # df<-read.csv(paste0("cpr/data/kesi_sweep/", base_name))
   par_recover<- read.csv(paste0("data/sweeps/weather_on_earnings/stan/y_counterfactual_1_observed_years_10_", base_name))[,2]
   par_known<- colMeans(read.csv(paste0("data/sweeps/weather_on_earnings/stan/y_estimated_1_observed_years_10_", base_name)))[2:261]
@@ -21,7 +28,7 @@ for(i in 1:nrow(sweep_list)){
   #M[i] = abs(mean(par_recover - par_known)*(sd(par_known)/mean(par_known)))
 }
 
-dat = data.frame(x = sweep_list[,1], y =sweep_list[,2], z = M[])
+dat = data.frame(x = sweep_list[, 2], y = sweep_list[, 1], z = M[])
 
 # Define the specific color and a contrasting color
 base_color <- "#006c66"

@@ -1,6 +1,13 @@
+#########################################
+######### FIGURE: EARNINGS ON KESI SWEEP HEATMAPS
+# Reads data/sweeps/earnings_on_kesi/stan (from 6_MAKE); writes figures/combined_plot.pdf
+# Cells without a finished fit (e.g. a smoke run) are skipped.
 
-files<-dir("data/sweeps/earnings_on_kesi/stan")
 sweep_list <- as.data.frame(read_csv("data/sweeps/earnings_on_kesi/sweep_list.csv"))
+cell_file <- function(prefix, row) paste0("data/sweeps/earnings_on_kesi/stan/", prefix, "price_", sweep_list[row, 1], "_inspect_", sweep_list[row, 2], ".csv")
+fitted <- file.exists(cell_file("good2_imputed_years2_", seq_len(nrow(sweep_list)))) & file.exists(cell_file("good2_observed_years2_", seq_len(nrow(sweep_list))))
+sweep_list <- sweep_list[fitted, , drop = FALSE]
+if (nrow(sweep_list) == 0) stop("no fitted sweep cells found; run the recovery step first")
 
 addline_format <- function(x,...){
   gsub('\\s','\n',x)
@@ -9,7 +16,7 @@ addline_format <- function(x,...){
 
 M <- rep(0, nrow(sweep_list))
 
-for(i in 1:nrow(sweep_list)){
+for(i in seq_len(nrow(sweep_list))){
     # First we get whether or not there has been illegal activity
     base_name <- paste0("price_",sweep_list[i,1], "_inspect_",sweep_list[i,2],".csv")
     # df<-read.csv(paste0("cpr/data/kesi_sweep/", base_name))
@@ -48,7 +55,7 @@ par_cont_heatmap = ggplot(data = dat) +
 
 M1 <- rep(0, nrow(sweep_list))
 
-for(i in 1:nrow(sweep_list)){
+for(i in seq_len(nrow(sweep_list))){
   par_recover <- c() 
   par_known <- c() 
   for(j in 1:1){
@@ -78,6 +85,4 @@ combined_plot <- plot_grid(par_cont_heatmap, par_est_heatmap, labels = "AUTO")
 # Save the combined plot as a PDF
 ggsave("figures/combined_plot.pdf", combined_plot, width = 10, height = 4)
 
-# To view the combined plot in the RStudio viewer
-print(combined_plot)
 

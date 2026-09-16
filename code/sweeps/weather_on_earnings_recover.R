@@ -1,13 +1,12 @@
+#########################################
+######### RECOVER WEATHER ON EARNINGS ###
+# One sweep cell: fit the earnings model to simulated data and predict the
+# counterfactual weather series.
 
+observed_years <- 10
+compile_stan_models("code/stan_models/recover_env_on_earnings.stan")
 
-# Main function
-parallelized_function <- function(sweep_list, observed_years = 10) {
-  
-  # Set up the number of cores to use
-  num_cores <- detectCores()
-  
-  # Parallel execution using mclapply
-  mclapply(1:nrow(sweep_list), function(sweep) {
+one_cell <- function(sweep) {
     
     
     
@@ -79,7 +78,6 @@ parallelized_function <- function(sweep_list, observed_years = 10) {
     data$NP <- ncol(data$DmatEnv[, , 1])
     data$ramadan <- sample(1:2, data$N, replace = TRUE)
     data$softplus_alpha <- 1
-    data$target_var = .01
     
     period_means <- matrix(NA, ncol = data$K, nrow = data$LP)
     for(p in 1:data$LP) {
@@ -98,15 +96,7 @@ parallelized_function <- function(sweep_list, observed_years = 10) {
     data$y = data$y +.01
 
     mod <- cmdstanr::cmdstan_model("code/stan_models/recover_env_on_earnings.stan")
-    pf <- mod$pathfinder(data = data)
-    init_list <- get_init_list(pf)
-    
-    a <- mod$sample(parallel_chains = 4,
-                    chains = 4,
-                    data = data,
-                    init = list(init_list, init_list, init_list, init_list),
-                    iter_warmup = 500, iter_sampling = 500, refresh = 10)
-    
+    a <- sample_with_pathfinder_inits(mod, data, refresh = 10)
     post <- extract.samples2(a)
     # 
     # nsims <- nrow(post$br[, , 1])
@@ -178,13 +168,11 @@ parallelized_function <- function(sweep_list, observed_years = 10) {
     write.csv(output2[, ,1], paste0("data/sweeps/weather_on_earnings/stan/y_estimated_1_observed_years_", observed_years, ending))
     write.csv(output2[, ,2], paste0("data/sweeps/weather_on_earnings/stan/y_estimated_2_observed_years_", observed_years, ending))
     
-  }, mc.cores = num_cores)
-  
-} # End function
+}
 
 
 sweep_list <- as.data.frame(read_csv("data/sweeps/weather_on_earnings/sweep_list.csv"))
 
 
-parallelized_function(sweep_list = sweep_list)
+run_sweep_cells(sweep_list, one_cell)
 

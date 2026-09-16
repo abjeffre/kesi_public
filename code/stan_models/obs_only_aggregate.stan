@@ -50,7 +50,6 @@ data {
   array[N_cases] int<lower=1,upper=L>  year;
   int<lower=1> LP;                  // periods
   array[LP] real P1;
-  real target_var;
   array[N_cases] int<lower=1,upper=LP> period;
   array[N_cases] int<lower=1,upper=2>  ramadan;
 
@@ -158,15 +157,17 @@ model {
   a ~ normal(28, 3);
   omega ~ exponential(1);
 
-  // --- Measurement error layer on version-adjusted y ---
-  // Define version-adjusted mean (positive via softplus), then draw y_true ~ Gamma(mean=adj_y, var=adj_y/tau_y)
-  //tau_y ~ normal(10, 1);  // you can swap to target_var-driven if you prefer
+  // Measurement error on version-adjusted y: gamma with mean y_adj and a fixed 10% CV
   for (i in 1:N_cases) {
     for (k in 1:K) {
-      real y_adj = softplus( y[i, k] - b_ver[k, sver[i]], softplus_alpha );  // version-corrected, positive
-      // Gamma with mean = y_adj, variance = y_adj / tau_y -> shape = y_adj * tau_y, rate = tau_y
-      real wanted_var =sqrt((y[i,k]*target_var)/y[i,k]); 
-      y_true[i, k] ~ gamma( y_adj * wanted_var, wanted_var );
+      real y_adj = softplus( y[i, k] - b_ver[k, sver[i]], softplus_alpha );
+      real measurement_cv = 0.10;
+      real measurement_shape = inv_square(measurement_cv);
+
+      y_true[i, k] ~ gamma(
+        measurement_shape,
+        measurement_shape / y_adj
+      );
     }
   }
   

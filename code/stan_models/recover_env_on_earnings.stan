@@ -66,7 +66,6 @@ data {
   matrix[LP, K] period_means;
   vector[K] k_means;
   real softplus_alpha;
-  real target_var;  // Target variance
 }
 parameters {
   matrix<lower=0>[N_est, K] gdp_impute;
@@ -202,11 +201,15 @@ model {
   }
   
   // Deal with measurement error caused by suvey verisons
-  for(t in 1:N_eco){
-    for (k in 1 : K) {
-      real wanted_var = sqrt((y[t, k] * target_var) / y[t, k]);
-      gdp_true[t, k] ~ gamma(gdp_error[t, k] * wanted_var, wanted_var);
+  for (t in 1:N_eco) {
+    for (k in 1:K) {
+      real measurement_cv = 0.10;
+      real measurement_shape = inv_square(measurement_cv);
 
+      gdp_true[t, k] ~ gamma(
+        measurement_shape,
+        measurement_shape / gdp_error[t, k]
+      );
     }
   }
   

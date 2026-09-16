@@ -1,29 +1,13 @@
 #########################################
-######### RECOVER WEATHER ON EARNINGS ###
-library(readr)
-library(abind)
-library(rethinking)
-library(posterior)
-# 
-# 
-# set_project_wd <- function(folder){
-#   user=Sys.info()[[6]]
-#   if(user=="jeffrey_andrews") setwd(paste0("C:/Users/jeffrey_andrews/OneDrive/Documents/", folder))
-#   else if(user=="Jeff") setwd(paste0("C:/Users/Jeff/OneDrive/Documents/", folder))
-#   else if(user == 'jeffr')  setwd(paste0("C:/Users/jeffr/OneDrive/Documents/", folder))
-# }
-# set_project_wd("Bio_econ")
-# # source("code/script/cleaning/getData.R")
-# source("~/functions/utility.R")
-# # source("code/Bio_econ.R")
+######### RECOVER EARNINGS ON KESI ######
+# One sweep cell: fit the kesi model to the simulated data with the full
+# earnings series and again with the last observed_years imputed.
 
+observed_years <- 2
+compile_stan_models(c("code/stan_models/recover_earnings_on_kesi_without_imputation.stan",
+                      "code/stan_models/recover_earnings_on_kesi.stan"))
 
-parallelized_function<- function(sweep_list = sweep_list, observed_years = 2){
-
-  num_cores <- detectCores()
-  
-  # Parallel execution using mclapply
-    mclapply(1:nrow(sweep_list), function(sweep) {
+one_cell <- function(sweep) {
       price =  sweep_list[sweep,1]
       inspect = sweep_list[sweep,2]
       ending= paste0("_price_",price, "_inspect_", inspect, ".csv")
@@ -113,7 +97,6 @@ parallelized_function<- function(sweep_list = sweep_list, observed_years = 2){
       }
       data$DmatX= Dmat
       data$year = rep(1:total_years, each= nperiods)
-      data$target_var = .05
       
       # First Check to see if we can see the full set of earnings what the parameter values are
       
@@ -123,44 +106,18 @@ parallelized_function<- function(sweep_list = sweep_list, observed_years = 2){
       ###########################
       ##### FULL DATA ###########
       # Second see what happens if the only see the last segrement on of the data!
-      mod<-cmdstanr::cmdstan_model("code/stan_models/recover_earnings_on_kesi_without_imputation.stan")
-      #mod2<-cmdstanr::cmdstan_model("C:/Users/jeffr/OneDrive/Documents/Bio_econ/code/stan_models/test_on_multivariate_normal.stan")
-      pf <- mod$pathfinder(data = data)
-      #pf2 <- mod2$pathfinder(data = data)
-      init_list<-get_init_list(pf)
-      a = mod$sample(parallel_chains =4,
-                     chains =4,
-                     data = data,
-                     init = list(init_list, init_list, init_list, init_list),
-                     iter_warmup =500, iter_sampling = 500, refresh = 50)
-      post<-extract.samples2(a)
+      mod <- cmdstanr::cmdstan_model("code/stan_models/recover_earnings_on_kesi_without_imputation.stan")
+      a <- sample_with_pathfinder_inits(mod, data, refresh = 50)
+      post <- extract.samples2(a)
       output1_full<- (post$bgdp[,1]*post$sigma_gdp+post$mu_gdp)
       output2_full<- (post$bgdp[,2]*post$sigma_gdp+post$mu_gdp)
       #######################
       ##### IMPUTED DATA ####
       
       # Second see what happens if the only see the last segrement on of the data!
-      mod<-cmdstanr::cmdstan_model("code/stan_models/recover_earnings_on_kesi.stan")
-      # mod2<-cmdstanr::cmdstan_model("C:/Users/jeffr/OneDrive/Documents/Bio_econ/code/stan_models/test_on_multivariate_normal.stan")
-      
-      tryCatch({
-        pf <- mod$pathfinder(data = data)
-      }, error = function(e) {
-        # Log the error details
-        message("An error occurred in sweep,", ending, ". The pathfinder function returns the following error: ", e$message,)
-        # Return a default value or handle the error as needed
-      })
-
-      # pf2 <- mod2$pathfinder(data = data)
-      init_list<-get_init_list(pf)
-      
-      a2 = mod$sample(parallel_chains =4,
-                     chains =4,
-                     data = data,
-                     init = list(init_list, init_list, init_list, init_list),
-                     iter_warmup =500, iter_sampling = 500, refresh = 10)
-      
-      post2<-extract.samples2(a2)
+      mod <- cmdstanr::cmdstan_model("code/stan_models/recover_earnings_on_kesi.stan")
+      a2 <- sample_with_pathfinder_inits(mod, data, refresh = 10)
+      post2 <- extract.samples2(a2)
       output1_imputed<- (post2$bgdp[,1]*post2$sigma_gdp+post2$mu_gdp)
       output2_imputed<- (post2$bgdp[,2]*post2$sigma_gdp+post2$mu_gdp)
   
@@ -171,11 +128,10 @@ parallelized_function<- function(sweep_list = sweep_list, observed_years = 2){
       write.csv(output2_full, paste0("data/sweeps/earnings_on_kesi/stan/good2_observed_years", observed_years, ending))
       write.csv(output2_imputed, paste0("data/sweeps/earnings_on_kesi/stan/good2_imputed_years", observed_years, ending))
           
-      }, mc.cores = num_cores)
-}# End Function
+}
 
 
 sweep_list <- as.data.frame(read_csv("data/sweeps/earnings_on_kesi/sweep_list.csv"))
 
-parallelized_function(sweep_list = sweep_list)
+run_sweep_cells(sweep_list, one_cell)
 

@@ -7,7 +7,7 @@ wage_scalar =  0.1
 wave_frequency = .03
 amplitude =5
 wage1 =  wage_scalar .* ((sin.(wave_frequency .*collect(1:nrounds)) .+ 1)*amplitude/2)
-plot(wage1)
+
 
 a = cpr_abm(tech =.0001,
  leak = false,
@@ -47,4 +47,4 @@ low=plot(mean(b[:caught2][:,1,:], dims = 2), label = "", xlab = "Time", c = "#6C
 
 
 plot(low, high, size = (900, 400), bottom_margin = 20px, grid = false, lw =2)
-savefig("kesi\\figures\\simulation_predictions.pdf")
+savefig(joinpath("figures", "simulation_predictions.pdf"))

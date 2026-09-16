@@ -1,7 +1,37 @@
+###################################################################
+############ 3. ROBUSTNESS CHECKS #################################
+# Reads  data/data_kesi2025-09-22.RDS, data/gov_adjustments.RDS
+# Writes data/robustness_<model>.RDS, data/robustness_elasticities.csv,
+#        data/post_hist.RDS, figures/robustness_clove_hist.pdf
+
+library(rethinking)
+library(cmdstanr)
+library(posterior)
+source("code/functions/utility.R")
+
+CLOVE_SECTOR <- 10
+CLOVE_GOV_COLUMN <- 6
+ALIGNMENT_YEAR <- 13
+ROBUSTNESS_PERIOD_LENGTH <- 26
+ROBUSTNESS_M <- 2
+
+fit_robustness_model <- function(stan_file, model_data) {
+  model <- cmdstan_model(stan_file)
+  model$sample(
+    data = model_data,
+    iter_sampling = SAMPLER_ITER,
+    iter_warmup = SAMPLER_ITER,
+    chains = SAMPLER_CHAINS,
+    init = 0,
+    parallel_chains = SAMPLER_CHAINS,
+    max_treedepth = SAMPLER_MAX_TREEDEPTH,
+    refresh = SAMPLER_REFRESH
+  )
+}
 
 ##############################################################
 ########### ROBUSTNESS CHECK 1 - OBSERVATIONS ONLY ###########
-data <- readRDS("~/kesi/data/data_kesi2025-09-22.RDS")
+data <- readRDS("data/data_kesi2025-09-22.RDS")
 if (!is.matrix(data$y)) stop("'data$y' must be a matrix (N x K).")
 N <- nrow(data$y)
 K <- ncol(data$y)
@@ -99,52 +129,38 @@ if (data_kesi$DM == 0L) {
   
   data_kesi$denv_ind <- denv_ind_mat
 }
-data_kesi$period_length <- 26
-data_kesi$M = 2
-data_kesi$N_cases = data_kesi$N
-data_kesi$target_var = .1
-
+data_kesi$period_length <- ROBUSTNESS_PERIOD_LENGTH
+data_kesi$M <- ROBUSTNESS_M
+data_kesi$N_cases <- data_kesi$N
 
 ###### RUN MODELS ########
 
-obs_only_sector <- cmdstan_model("~/kesi/code/stan_models/obs_only_sectors.stan")
-obs_only_sector_hmc <- obs_only_sector$sample(
-  data = data_kesi,
-  iter_sampling = 500,
-  iter_warmup = 500,
-  chains = 4,
-  #init = pf2,
-  parallel_chains = 4,
-  refresh = 2
-)
+obs_only_sector_hmc <- fit_robustness_model("code/stan_models/obs_only_sectors.stan", data_kesi)
+saveRDS(extract.samples(obs_only_sector_hmc), "data/robustness_obs_only_sectors.RDS")
 
-library(cmdstanr)
-obs_only_agg <- cmdstan_model("~/kesi/code/stan_models/obs_only_aggregate.stan")
+obs_only_agg_hmc <- fit_robustness_model("code/stan_models/obs_only_aggregate.stan", data_kesi)
+saveRDS(extract.samples(obs_only_agg_hmc), "data/robustness_obs_only_aggregate.RDS")
 
-obs_only_agg_hmc <- obs_only_agg$sample(
-  data = data_kesi,
-  iter_sampling = 500,
-  iter_warmup = 500,
-  chains = 4,
-  #  init = pf2,
-  parallel_chains = 4,
-  refresh = 2
-)
+# Full-model variants: same data as the main model, older name for the CPI scale
+data_variants <- data
+data_variants$scale_gdp <- data$scale_cpi
+
+model_sectors_hmc <- fit_robustness_model("code/stan_models/model_sectors.stan", data_variants)
+saveRDS(extract.samples(model_sectors_hmc), "data/robustness_model_sectors.RDS")
+
+model_aggregate_hmc <- fit_robustness_model("code/stan_models/model_aggregate.stan", data_variants)
+saveRDS(extract.samples(model_aggregate_hmc), "data/robustness_model_aggregate.RDS")
 
 #########################################
-########### CALCULATRE ELASTICITY #######
+########### CALCULATE ELASTICITY ########
 
 post <- extract.samples(obs_only_agg_hmc)
 mu_draw <- post$bgdp
 a_draw  <- post$a
 
 # --- build a FIXED (non-random) GDP baseline from posterior means ---
-N <- data_kesi$N_cases
-`%||%` <- function(a,b) if (!is.null(a)) a else b
-
-gdp_true_bar   <- rowSums(data_kesi$y) 
-# --- compute reference summaries ---
-S_bar <- mean(log1p(gdp_true_bar))                # \overline{S}
+gdp_true_bar   <- rowSums(data_kesi$y)
+S_bar <- mean(log1p(gdp_true_bar))
 a_bar <- mean(a_draw)
 mu_bar <- mean(mu_draw)
 
@@ -157,32 +173,35 @@ kappa_ref <- S_bar * (logistic(eta_ref) / softplus(eta_ref))
 # --- elasticity draws: linear rescale of bgdp_mu ---
 gdp_mu <- kappa_ref * mu_draw
 
-mean(gdp_mu)
-
+write.csv(data.frame(model = "obs_only_aggregate",
+                     elasticity_mean = mean(gdp_mu),
+                     elasticity_lower_90 = PI(gdp_mu, .9)[1],
+                     elasticity_upper_90 = PI(gdp_mu, .9)[2]),
+          "data/robustness_elasticities.csv", row.names = FALSE)
 
 ##############################################################################
 ############# ROBUSTNESS CHECK 2 - HISTORICAL DATA ###########################
 
-scale_gdp <-readRDS('data/gov_adjustments.RDS')
-# Align Data
-obs<-data$y[data$year[data$eco_ind] ==13,10]
-gov<-scale_gdp[data$year[1:nrow(scale_gdp)] ==13,6]
-clove_hist2<-scale_gdp[,6]*(sum(obs)/sum(gov))
-data$clove_hist<- clove_hist2*data$scale_cpi[1:338]
-clove_hist <- cmdstan_model("kesi/code/stan_models/clove_hist.stan")
-# Sampling
-hist_hmc <- clove_hist$sample(
-  data = data,
-  iter_sampling = 250,
-  iter_warmup = 250,
-  chains = 4,
-  init = 0,
-  parallel_chains = 4,
-  refresh = 2
-)
+scale_gdp <- readRDS("data/gov_adjustments.RDS")
+# Align the official series to the survey earnings in the overlap year
+obs <- data$y[data$year[data$eco_ind] == ALIGNMENT_YEAR, CLOVE_SECTOR]
+gov <- scale_gdp[data$year[1:nrow(scale_gdp)] == ALIGNMENT_YEAR, CLOVE_GOV_COLUMN]
+clove_hist2 <- scale_gdp[, CLOVE_GOV_COLUMN] * (sum(obs) / sum(gov))
+# The official series covers the first nrow(scale_gdp) periods of the timeline;
+# only the imputed periods (est_ind) are replaced, observed survey periods stay.
+clove_hist_timeline <- clove_hist2 * data$scale_cpi[1:nrow(scale_gdp)]
+data$clove_hist <- clove_hist_timeline[data$est_ind]
+data$clove_sector <- CLOVE_SECTOR
 
-post<-extract.samples(hist_hmc)
-saveRDS(post, "kesi/data/post_hist.RDS")
-colnames(data$y)
-dens(post$mu_gdp +post$bgdp[,6]*post$sigma_gdp, show.HPDI = .9, show.zero = T)
-dens(post$mu_gdp +post$bgdp[,10]*post$sigma_gdp, show.HPDI = .9, show.zero = T)
+hist_hmc <- fit_robustness_model("code/stan_models/clove_hist.stan", data)
+
+post <- extract.samples(hist_hmc)
+saveRDS(post, "data/post_hist.RDS")
+
+pdf("figures/robustness_clove_hist.pdf", width = 10, height = 5)
+par(mfrow = c(1, 2))
+dens(post$mu_gdp + post$bgdp[, 6] * post$sigma_gdp, show.HPDI = .9, show.zero = TRUE,
+     xlab = paste("Effect of", colnames(data$y)[6]))
+dens(post$mu_gdp + post$bgdp[, CLOVE_SECTOR] * post$sigma_gdp, show.HPDI = .9, show.zero = TRUE,
+     xlab = paste("Effect of", colnames(data$y)[CLOVE_SECTOR]))
+dev.off()

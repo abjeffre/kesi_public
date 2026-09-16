@@ -24,7 +24,7 @@ end
 )
 
     # FIXED parameters for Sim
-    years = 2000
+    years = KESI_SMOKE ? SMOKE_YEARS : 2000
     nperiods = 26
     M = 2 # Types of weather variables
     weather_noise = .01
@@ -85,7 +85,6 @@ end
     CSV.write(clean_path("data/sweeps/earnings_on_kesi/abm/effort_price_$pr inspect $ins.csv"), DataFrame(observed[:effort][:,:,1,1], :auto))
     CSV.write(clean_path("data/sweeps/earnings_on_kesi/abm/weather_price_$pr inspect $ins.csv"), DataFrame(weather, :auto))
     CSV.write(clean_path("data/sweeps/earnings_on_kesi/abm/earnings_price_$pr inspect $ins.csv"), DataFrame(observed[:wages][:,:,1], :auto))
-    observed[:punish2][:,:,1,1]
 
     # Earnings plus harvest
     observed[:wages][:,ngoods,1,1] = observed[:harvest][:,1,1] .* pr
@@ -98,8 +97,8 @@ end
 end
 
 
-inspect = collect(.01 : .1 : 1)
-price = collect(1.1:.12:2.2)
+inspect = smoke_grid(collect(.01 : .1 : 1))
+price = smoke_grid(collect(1.1:.12:2.2))
 
 S=expand_grid(price, inspect)
 CSV.write(clean_path("data/sweeps/earnings_on_kesi/sweep_list.csv"), DataFrame(S, :auto))

@@ -24,7 +24,7 @@ end
 )
 
     # FIXED parameters for Sim
-    years = 2000
+    years = KESI_SMOKE ? SMOKE_YEARS : 2000
     nperiods = 26
     M = 2 # Types of weather variables
     weather_noise = 1
@@ -56,7 +56,6 @@ end
         wage_data[:,i] = μ[i] .+ sum(γ[i,:] .* weather', dims = 1)[1,:] + rand(Normal(0, wage_noise), nrounds)
     end
 
-     plot(plot(wage_data[1:26,:]), plot(weather[1:26,:]))
 
     # Do Simulation
     observed = cpr_abm(nrounds = nrounds,
@@ -138,8 +137,8 @@ end
 end
 
 
-γ₁_sweep = collect(.01:.02:.2)
-wage_var_sweep  = collect(.01:.02:.2)
+γ₁_sweep = smoke_grid(collect(.01:.02:.2))
+wage_var_sweep  = smoke_grid(collect(.01:.02:.2))
 S=expand_grid(γ₁_sweep, wage_var_sweep)
 CSV.write(clean_path("data/sweeps/weather_on_earnings/sweep_list.csv"), DataFrame(S, :auto))
 # addprocs(10)

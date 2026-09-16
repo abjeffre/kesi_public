@@ -114,8 +114,7 @@ function cpr_abm(
   seizure_pun2_correlation = nothing,  # This is experimental and is meant to induce some causal model on the behalf of agents but is not fully implemented
   eco_sys_dam = nothing,                #
   nperiods = 1,                         # These are meant to represent months in a year or something like that - essentially they are the seasonal payoff functions 
-  wage_elasticities =1,
-  limit_override = nothing
+  wage_elasticities =1
 ) 
   # Make sure all potential parameters are converted into floats for multiple dispatch
   wages=Float64.(wages)
@@ -361,7 +360,6 @@ function cpr_abm(
       # This calculates the costs of investing in insitutions!
       MC1 = punish_cost*traits.punish_type
       MC2 = punish_cost*traits.punish_type2
-      # println(traits.punish_type2)
       if seized_on == false 
         SP2 = SP1 = zeros(n) # Sets all siezures to zero if turned off
        end
@@ -389,21 +387,22 @@ function cpr_abm(
       # WL[WL .< 0] .=0
       agents.payoff_round = 
       HG .*(1 .- caught_sum).*price +
-      # [sum(row) for row in eachrow(WL)] + # Payoff from harvesting
-      SP1.*price + # Payoff from Seizures Access Rights
-      SP2.*price + # Payoff from Seizures USe Rights
-      FP1.*price + # Payoff from Fines Access Right
-      FP2.*price + # Payoff from Fines Use Rights
-      [sum(row) for row in eachrow(WL)] - # Plus wages
-       MC1 - # Minus cost of investment in access rights
-       MC2 - # Minus cost of investment in use rights
-       TC- # Minus Travel costs
-       POL[agents.gid] + # Minus Polution costs
-       ECO[agents.gid] - # Plus Ecosystem Services
-       ifelse(catch_before == true, (caught1).*groups.fine1[loc], HG .*(caught1).*groups.fine1[loc]) - # Minuse fines if must be paid
-       HG .*(caught2).*groups.fine2[agents.gid] -# Minus fines from ingroup
-      getCongestion(loc, effort[:,1], agents.gid, ngroups, congestion_alpha)       
-      # Store Payoffs
+      [sum(row) for row in eachrow(WL)] # Payoff from harvesting
+      # SP1.*price + # Payoff from Seizures Access Rights
+      # SP2.*price + # Payoff from Seizures USe Rights
+      # FP1.*price + # Payoff from Fines Access Right
+      # FP2.*price # Payoff from Fines Use Rights
+      # ).^α + # Scaled by some diminishing marginal returns on harvesting
+      # [sum(row) for row in eachrow(WL)] - # Plus wages
+      #  MC1 - # Minus cost of investment in access rights
+      #  MC2 - # Minus cost of investment in use rights
+      #  TC- # Minus Travel costs
+      #  POL[agents.gid] + # Minus Polution costs
+      #  ECO[agents.gid] - # Plus Ecosystem Services
+      #  ifelse(catch_before == true, (caught1).*groups.fine1[loc], HG .*(caught1).*groups.fine1[loc]) - # Minuse fines if must be paid
+      #  HG .*(caught2).*groups.fine2[agents.gid] -# Minus fines from ingroup
+      # getCongestion(loc, effort[:,1], agents.gid, ngroups, congestion_alpha)       
+      # # Store Payoffs
       agents.payoff += agents.payoff_round .+ baseline  # add baseline fitness
       
       any(isnan.(agents.payoff_round)) ? println("Found", sum(isnan.(agents.payoff_round)), "NANs in payoffs - you might wanna trouble shoot") : nothing 
@@ -412,9 +411,6 @@ function cpr_abm(
       
       # This allows for the insane programmer to print all of the data at once to do some kind of spot check. 
       if verbose == true
-        # println(sum(HG))
-        println(MC2)
-        # println("payoffs", agents.payoff)
         println("harvest, ", sum(isnan.(HG.*(1 .- caught_sum))))
         println("sg_og, ", sum(isnan.(SP1)))
         println("sg_ig, ", sum(isnan.(SP2)))
@@ -539,8 +535,7 @@ function cpr_abm(
             #   println("Mutation: ", sum(effort[:,1] .> effortT[:,2][models])) 
           end 
         else # This is for normal social learning
-          glearn_strat_bin = glearn_strat == false ? false : true
-          models=GetModels(agents, ngroups, gmean, nmodels, out, learn_type, glearn_strat_bin) # Get models
+          models=GetModels(agents, ngroups, gmean, nmodels, out, learn_type, glearn_strat) # Get models
           if learn_group_policy
             traits=SocialTransmissionGroup(traits, models, fidelity, traitTypesGroup, agents, ngroups, out) # See comment above this is still a prototype
           else
@@ -725,12 +720,6 @@ function cpr_abm(
     ############ WEALTH DYNAMICS ###############
     wealth_degrade !== nothing ? agents.payoff = agents.payoff .* wealth_degrade : nothing
 
-    ###########################################
-    ######### QUICK FIXES #####################
-
-    if limit_override !== nothing 
-       traits.harv_limit .= limit_override 
-    end
     # Store the period effort 
     period_efforts[period]= effort
 
