@@ -153,10 +153,7 @@ imputed clove earnings in `code/stan_models/clove_hist.stan`.
 
 ## Notes
 
-- Measurement error in sectoral earnings is modelled in every Stan program as
-  a gamma distribution with the survey-version-adjusted mean and a fixed
-  coefficient of variation of 10 percent (`measurement_cv` in
-  `code/stan_models/*.stan`).
+
 - `code/stan_models/model_sectors.stan` and `model_aggregate.stan` are the
   full-model variants fitted in step 3 alongside the observations-only models.
 - The sweep outputs behind the validation figures (about 3 GB) are not
